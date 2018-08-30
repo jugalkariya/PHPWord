@@ -24,7 +24,7 @@ use PhpOffice\PhpWord\Exception\CopyFileException;
 use PhpOffice\PhpWord\Exception\CreateTemporaryFileException;
 use PhpOffice\PhpWord\Exception\Exception;
 use PhpOffice\PhpWord\Shared\ZipArchive;
-
+use PhpOffice\PhpWord\Settings;
 class TemplateProcessor
 {
     const MAXIMUM_REPLACEMENTS_DEFAULT = -1;
@@ -179,8 +179,8 @@ class TemplateProcessor
      */
     protected static function ensureMacroCompleted($macro)
     {
-        if (substr($macro, 0, 2) !== '${' && substr($macro, -1) !== '}') {
-            $macro = '${' . $macro . '}';
+        if (substr($macro, 0, 2) !== '[' && substr($macro, -1) !== ']') {
+            $macro = '[' . $macro . ']';
         }
 
         return $macro;
@@ -263,8 +263,8 @@ class TemplateProcessor
      */
     public function cloneRow($search, $numberOfClones)
     {
-        if ('${' !== substr($search, 0, 2) && '}' !== substr($search, -1)) {
-            $search = '${' . $search . '}';
+        if ('[' !== substr($search, 0, 2) && ']' !== substr($search, -1)) {
+            $search = '[' . $search . '}';
         }
 
         $tagPos = strpos($this->tempDocumentMainPart, $search);
@@ -303,7 +303,7 @@ class TemplateProcessor
 
         $result = $this->getSlice(0, $rowStart);
         for ($i = 1; $i <= $numberOfClones; $i++) {
-            $result .= preg_replace('/\$\{(.*?)\}/', '\${\\1#' . $i . '}', $xmlRow);
+            $result .= preg_replace('/\$\{(.*?)\}/', '\[\\1#' . $i . ']', $xmlRow);
         }
         $result .= $this->getSlice($rowEnd);
 
@@ -323,7 +323,7 @@ class TemplateProcessor
     {
         $xmlBlock = null;
         preg_match(
-            '/(<\?xml.*)(<w:p\b.*>\${' . $blockname . '}<\/w:.*?p>)(.*)(<w:p\b.*\${\/' . $blockname . '}<\/w:.*?p>)/is',
+            '/(<\?xml.*)(<w:p\b.*>\[' . $blockname . ']<\/w:.*?p>)(.*)(<w:p\b.*\[\/' . $blockname . '}<\/w:.*?p>)/is',
             $this->tempDocumentMainPart,
             $matches
         );
@@ -356,7 +356,7 @@ class TemplateProcessor
     public function replaceBlock($blockname, $replacement)
     {
         preg_match(
-            '/(<\?xml.*)(<w:p.*>\${' . $blockname . '}<\/w:.*?p>)(.*)(<w:p.*\${\/' . $blockname . '}<\/w:.*?p>)/is',
+            '/(<\?xml.*)(<w:p.*>\[' . $blockname . ']<\/w:.*?p>)(.*)(<w:p.*\[\/' . $blockname . '}<\/w:.*?p>)/is',
             $this->tempDocumentMainPart,
             $matches
         );
@@ -507,7 +507,11 @@ class TemplateProcessor
      */
     protected function getMainPartName()
     {
-        return 'word/document.xml';
+        // Use this for ODT files
+        return 'content.xml';
+
+        // Use this for Word Document files
+        // return 'word/document.xml';
     }
 
     /**
